@@ -40,6 +40,90 @@ class D5InputElement extends HTMLElement {
 
 customElements.define('d5-input', D5InputElement)
 
+class D5LoginPage extends HTMLElement { 
+  constructor() { 
+    super()
+    const LoginPage = document.createElement('template')
+    LoginPage.innerHTML = `
+      <style>
+        .login_card {
+          max-width: 360px;
+          min-width: 180px;
+          padding: 48px;
+          background-color: #fff!important;
+          margin: auto;
+        }
+      
+        h2 {
+          margin-bottom: 24px;
+        }
+        
+        label {
+          cursor: pointer;
+          font-size: 12px;
+        }
+      
+        button.login_button {
+          background-color: #2852eb;
+          color: white;
+          height: 32px;
+          width: 100%;
+          outline: none;
+          border: none;
+          cursor: pointer;
+          border-radius: 4px;
+          margin: 16px 0;
+          font-size: 12px;
+        }
+        
+        .login_link {
+          text-align: center;
+        }
+        
+        .login_link_flex {
+          display: flex;
+          justify-content: space-between;
+        }
+        
+        .login_link a, .login_link_flex a {
+          font-size: 12px;
+          text-decoration: none;
+          color: #195aff;
+        }
+      </style>
+  
+      <div class="login_card">
+        <h2>
+          Login
+        </h2>
+        <label for="account">Account</label>
+        <div class="input">
+          <d5-input type="text" id="account" />
+        </div>
+        <label for="password">Password</label>
+        <div class="input">
+          <d5-input type="text" id="password" />
+        </div>
+        <button class="login_button">
+          Login
+        </button>
+        <div class="login_link_flex">
+          <a href="#">Forgot?</a>
+          <a href="#">Account does not exist? Sign Up?</a>
+        </div>
+      </div>
+    `
+  
+    const cloneContent = LoginPage.content.cloneNode(true)
+
+    const shadow = this.attachShadow({mode: "open"})
+    shadow.append(cloneContent)
+  }
+}
+
+customElements.define('d5-login-page', D5LoginPage)
+
+
 
 class D5Onboarding { 
   constructor(config) { 
@@ -49,15 +133,7 @@ class D5Onboarding {
   }
 
   init() { 
-    const styleElement = document.createElement('style');
-    styleElement.appendChild(document.createTextNode(style));
-    document.head.appendChild(styleElement);
-
-    this.fragment = new DocumentFragment()
-
     this.renderLoginPage()
-
-    document.body.append(this.fragment)
   }
 
   setRoute = (route) => {
@@ -80,55 +156,9 @@ class D5Onboarding {
   }
 
   renderLoginPage() { 
-    const loginCard = this.fragment.appendChild(D5Onboarding.createElement('div', 'd5_login_card'))
-    loginCard.appendChild(D5Onboarding.createElement('h2', '', 'Login'))
+    const d5LoginPage = document.createElement('d5-login-page');
 
-    loginCard.appendChild(D5Onboarding.createElement('label', '', 'Account', {
-      for: 'account',
-    }))
-    const inputWrapper1 = loginCard.appendChild(D5Onboarding.createElement('div', 'input'))
-    const d5Input1 = new D5InputElement()
-    inputWrapper1.appendChild(d5Input1)
-
-    loginCard.appendChild(D5Onboarding.createElement('label', '', 'Password', {
-      for: 'password',
-    }))
-    const inputWrapper2 = loginCard.appendChild(D5Onboarding.createElement('div', 'input'))
-    const d5Input2 = new D5InputElement()
-    inputWrapper2.appendChild(d5Input2)
-
-    loginCard.appendChild(D5Onboarding.createElement('button', 'login_button', 'Login'))
-    const loginLink = loginCard.appendChild(D5Onboarding.createElement('div', 'login_link_flex'))
-    loginLink.appendChild(D5Onboarding.createElement('a', '', 'Forgot?', {
-      href: 'https://d5devcdn.mez100.com.cn/products',
-    }))
-    const toSignUpLink = loginLink.appendChild(D5Onboarding.createElement('a', 'login_a', 'Account does not exist? Sign Up', {
-      href: '',
-    }))
-    toSignUpLink.addEventListener('click', () => {
-      this.setRoute('signUp')
-    })
-
-    const container = document.querySelector(this.container)
-    const page = container?.appendChild(D5Onboarding.createElement('div', '', '', {
-      id: 'onboarding-page',
-    }))
-    page?.appendChild(this.fragment)
-  }
-
-  static createElement = (type, className, html = '', attribute = {}) => {
-    const element = document.createElement(type)
-    element.className = className
-    element.innerHTML = html
-    Object.keys(attribute).forEach((key) => {
-      element.setAttribute(key, attribute[key])
-    })
-    return element
-  }
-
-  static removeElement = (element) => {
-    if (element && element.parentNode) {
-      element.parentNode.removeChild(element)
-    }
+    const container = document.getElementById('container');
+    container.appendChild(d5LoginPage);
   }
 }
