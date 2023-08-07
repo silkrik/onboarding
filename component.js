@@ -1,47 +1,49 @@
+const formValue = {}
+const formErrorValue = {}
+
 class D5InputElement extends HTMLElement { 
   constructor() { 
     super()
+
     const D5Input = document.createElement('template')
     D5Input.innerHTML = `
       <style>
-      label {
-        cursor: pointer;
-        font-size: 12px;
-      }
-      
       input {
         width: 100%;
         border: 1px solid #d9d9d9;
         height: 32px;
         margin-top: 5px;
         border-radius: 4px;
-      }
-      
-      input:focus {
-        outline: none;
         text-indent: 4px;
+        outline: none;
       }
       </style>
   
       <input />
     `
+    
   
     const cloneContent = D5Input.content.cloneNode(true)
     const element = cloneContent.querySelector('input')
   
     element.addEventListener('input', (event) => { 
-      console.log(event.target.value)
+      formValue[this.name] = event.target.value
     })
 
     const shadow = this.attachShadow({mode: "open"})
     shadow.append(cloneContent)
+  }
+
+  connectedCallback() {
+    this.name = this.getAttribute('name');
+    console.log()
   }
 }
 
 customElements.define('d5-input', D5InputElement)
 
 class D5LoginPage extends HTMLElement { 
-  constructor() { 
+  constructor(config) { 
     super()
     const LoginPage = document.createElement('template')
     LoginPage.innerHTML = `
@@ -98,13 +100,13 @@ class D5LoginPage extends HTMLElement {
         </h2>
         <label for="account">Account</label>
         <div class="input">
-          <d5-input type="text" id="account" />
+          <d5-input type="text" id="account" name="loginEmail" rules={console.log(1)} />
         </div>
         <label for="password">Password</label>
         <div class="input">
-          <d5-input type="text" id="password" />
+          <d5-input type="text" id="password" name="loginPassword" />
         </div>
-        <button class="login_button">
+        <button class="login_button" onClick={D5LoginPage.onSubmit()}>
           Login
         </button>
         <div class="login_link_flex">
@@ -118,6 +120,10 @@ class D5LoginPage extends HTMLElement {
 
     const shadow = this.attachShadow({mode: "open"})
     shadow.append(cloneContent)
+  }
+
+  static onSubmit() { 
+    console.log(formValue)
   }
 }
 
