@@ -5,8 +5,8 @@ class D5InputElement extends HTMLElement {
   constructor() { 
     super()
 
-    const D5Input = document.createElement('template')
-    D5Input.innerHTML = `
+    this.D5Input = document.createElement('template')
+    this.innerHTML = `
       <style>
       input {
         width: 100%;
@@ -18,32 +18,105 @@ class D5InputElement extends HTMLElement {
         outline: none;
       }
       </style>
-  
+
       <input />
     `
-    
-  
-    const cloneContent = D5Input.content.cloneNode(true)
+    this.D5Input.innerHTML = this.innerHTML
+
+    const cloneContent = this.D5Input.content.cloneNode(true)
     const element = cloneContent.querySelector('input')
   
     element.addEventListener('input', (event) => { 
       formValue[this.name] = event.target.value
+
+      // new Function(this.getAttribute('validator'))()
+      formErrorValue[this.name] = this.getErrorMessage({
+        required: this.getAttribute('required'),
+        pattern: this.getAttribute('pattern'),
+        maxLength: this.getAttribute('maxLength'),
+        minLength: this.getAttribute('minLength'),
+      }, formValue[this.name])
+
+      this.updateStyle()
     })
 
     const shadow = this.attachShadow({mode: "open"})
     shadow.append(cloneContent)
   }
 
+  updateStyle = () => {
+    const shadow = this.shadowRoot;
+    const inputElement = shadow.querySelector('input');
+    const borderColor = formErrorValue[this.name] ? 'red' : '#d9d9d9';
+    inputElement.style.border = `1px solid ${borderColor}`;
+  }
+
   connectedCallback() {
     this.name = this.getAttribute('name');
-    console.log()
+  }
+
+  getErrorMessage = (rules, value) => {
+    const formatName = (name) => name.slice(0, 1).toUpperCase() + name.slice(1).toLowerCase()
+    if (typeof value === 'string') {
+      const trimValue = value.trim()
+      if (rules?.required !== undefined && !trimValue?.length) {
+        return rules.required === ''
+          ? `${this.name} is a required field.` : rules.required
+      }
+      if (rules?.pattern) {
+        const pattern = typeof rules?.pattern === 'string'
+          ? {
+            value: rules?.pattern,
+            message: 'Please enter the correct format',
+          }
+          : rules?.pattern
+        if (!new RegExp(pattern.value)?.test(trimValue)) {
+          return pattern.message ?? 'Please enter the correct format'
+        }
+      }
+      if (rules?.maxLength) {
+        const defaultMessage = `${formatName(name)} cannot be more than ${rules?.maxLength} charactors.`
+        const maxLength = typeof rules?.maxLength === 'number'
+          ? {
+            value: rules?.maxLength,
+            message: defaultMessage,
+          }
+          : rules?.maxLength
+        if (trimValue.length > maxLength.value) {
+          return maxLength.message ?? defaultMessage
+        }
+      }
+      if (rules?.minLength) {
+        const defaultMessage = `${formatName(name)} cannot be less than ${rules?.minLength} charactors.`
+        const minLength = typeof rules?.minLength === 'number'
+          ? {
+            value: rules?.minLength,
+            message: defaultMessage,
+          }
+          : rules?.minLength
+        if (trimValue.length < minLength.value) {
+          return minLength.message ?? defaultMessage
+        }
+      }
+      if (rules?.validator) {
+        const message = rules?.validator(trimValue)
+        return message ?? 'Please '
+      }
+    }
+    if (value instanceof Array) {
+      if (rules?.required && !value?.length) {
+        return typeof rules.required === 'string'
+          ? rules.required : `${formatName(name)} is a required field.`
+      }
+    }
+    return ''
   }
 }
 
 customElements.define('d5-input', D5InputElement)
 
 class D5LoginPage extends HTMLElement { 
-  constructor(config) { 
+  constructor() { 
     super()
     const LoginPage = document.createElement('template')
     LoginPage.innerHTML = `
@@ -100,7 +173,7 @@ class D5LoginPage extends HTMLElement {
         </h2>
         <label for="account">Account</label>
         <div class="input">
-          <d5-input type="text" id="account" name="loginEmail" rules={console.log(1)} />
+          <d5-input type="text" id="account" name="loginEmail" required />
         </div>
         <label for="password">Password</label>
         <div class="input">
@@ -128,8 +201,6 @@ class D5LoginPage extends HTMLElement {
 }
 
 customElements.define('d5-login-page', D5LoginPage)
-
-
 
 class D5Onboarding { 
   constructor(config) { 
