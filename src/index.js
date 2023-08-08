@@ -96,7 +96,7 @@ const sendRequest = (method, url, data, callback) => {
 }
 
 class D5InputElement extends HTMLElement { 
-  constructor() { 
+  constructor() {
     super()
     this.D5Input = document.createElement('template')
     this.innerHTML = `
@@ -117,9 +117,37 @@ class D5InputElement extends HTMLElement {
           margin-top: 2px;
           color: rgb(219, 54, 67);
         }
+
+        .input_wrapper {
+          position: relative;
+        }
+
+        .input_wrapper img {
+          position: absolute;
+          right: 0;
+          top: 10px;
+          cursor: pointer;
+        }
+
+        label {
+          cursor: pointer;
+          font-size: 12px;
+          font-weight: 600;
+          color: rgb(49, 52, 64);
+        }
       </style>
 
-      <input />
+      ${this.getAttribute('label') ?
+        `<label for=${this.getAttribute('id')}>${this.getAttribute('label')}</label>`
+        : '<div></div>'
+      }
+      <div class="input_wrapper">
+        <input type=${this.getAttribute('type')} id=${this.getAttribute('id')} />
+        ${this.getAttribute('icon') ?
+          '<img src="./assets/eye.svg" />'
+          : '<div></div>'
+        }
+      </div>
       <div class="error_message" />
     `
     this.D5Input.innerHTML = this.innerHTML
@@ -127,7 +155,7 @@ class D5InputElement extends HTMLElement {
     const cloneContent = this.D5Input.content.cloneNode(true)
     const element = cloneContent.querySelector('input')
   
-    element.addEventListener('input', (event) => { 
+    element.addEventListener('input', (event) => {
       D5FormValue[this.name] = event.target.value
 
       new Function(this.getAttribute('validator'))()
@@ -140,6 +168,11 @@ class D5InputElement extends HTMLElement {
       }, D5FormValue[this.name], this.name)
 
       this.updateStyle()
+    })
+
+    const img = cloneContent.querySelector('.input_wrapper img')
+    img?.addEventListener('click', () => { 
+      element.setAttribute('type', element.getAttribute('type') === 'password' ? 'text' : 'password')
     })
 
     const shadow = this.attachShadow({mode: "open"})
@@ -180,13 +213,6 @@ class D5LoginPage extends HTMLElement {
         h2 {
           margin-bottom: 24px;
         }
-        
-        label {
-          cursor: pointer;
-          font-size: 12px;
-          font-weight: 600;
-          color: rgb(49, 52, 64);
-        }
       
         button.login_button {
           background-color: #2852eb;
@@ -221,30 +247,27 @@ class D5LoginPage extends HTMLElement {
         <h2>
           Login
         </h2>
-        <label for="account">
-          Account
-        </label>
         <div class="input">
           <d5-input
             type="text"
             id="account"
+            label="Account"
             name="email"
             required="Account is a required field."
             pattern="^\\S+@[a-zA-Z0-9._-]+\\.[a-zA-Z0-9._-]{2,}$"
             patternMessage="Please enter your email address."
           />
         </div>
-        <label for="password">
-          Password
-        </label>
         <div class="input">
           <d5-input
-            type="text"
+            type="password"
             id="password"
             name="password"
+            label="Password"
             maxLength="16"
             minLength="6"
             required="Password is a required field."
+            icon="true"
           />
         </div>
         <button class="login_button" onClick={D5LoginPage.onSubmit()}>
