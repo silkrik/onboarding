@@ -9,7 +9,9 @@
   <div id="container"></div>
   <script src="component.js"></script>
   <script>
-    const d5Onboarding = new D5Onboarding
+    const d5Onboarding = new D5Onboarding({
+      container: '#container',
+    })
     d5Onboarding.init()
   </script>
 </body>

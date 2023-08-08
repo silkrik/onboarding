@@ -2,6 +2,23 @@ const baseUrl = 'http://localhost:3000/api/v1'
 let D5FormValue = {}
 let D5FormErrorValue = {}
 
+const setCookie = (name, value) => {
+  const expirationDate = new Date()
+  expirationDate.setTime(expirationDate.getTime() + 6 * 60 * 60 * 1000)
+  document.cookie = `${name}=${value}; expires=${expirationDate.toUTCString()}; path=/`
+}
+
+const getCookie = (name) => {
+  const cookieString = document.cookie
+  const cookies = cookieString.split('; ')
+  const cookie = cookies.find((item) => {
+    const [cookieName] = item.split('=')
+    return (cookieName.trim() === name)
+  })
+  const [, cookieValue] = cookie?.split('=') || ['', '']
+  return cookieValue
+}
+
 const getErrorMessage = (rules, value, name) => {
   const formatName = (name) => name.slice(0, 1).toUpperCase() + name.slice(1).toLowerCase()
   if (typeof value === 'string') {
@@ -66,10 +83,11 @@ const sendRequest = (method, url, data, callback) => {
 
   xhr.onreadystatechange = function() {
     if (xhr.readyState === XMLHttpRequest.DONE) {
-      if (!JSON.parse(xhr.responseText).data) {
+      const response = JSON.parse(xhr.responseText)
+      if (!response.data) {
         callback(JSON.parse(xhr.responseText));
       } else { 
-        callback('')
+        callback(null,response)
       }
     }
   };
@@ -245,13 +263,14 @@ class D5LoginPage extends HTMLElement {
     shadow.append(cloneContent)
   }
 
-  static onSubmit() { 
+  static onSubmit = () => { 
     if (D5FormValue?.email?.trim() && D5FormValue?.password?.trim() && !D5FormErrorValue?.email && !D5FormErrorValue?.password) {
-      sendRequest("POST", `${baseUrl}/onboarding/login`, D5FormValue, (error) => {
+      sendRequest("POST", `${baseUrl}/onboarding/login`, D5FormValue, (error,response) => {
         if (error) {
           console.log(error.meta);
         } else {
-          console.log('Successfully login.');
+          setCookie('d5-onboarding-token', response.data.access)
+          d5Onboarding.setRoute('content')
         }
       });
     }
@@ -268,7 +287,14 @@ class D5Onboarding {
   }
 
   init() { 
-    this.renderLoginPage()
+    if (this.trigger === 'flat') {
+      this.renderLoginPage()
+    } else { 
+      const container = document.querySelector(this.container)
+      container.addEventListener('click', () => { 
+        this.renderLoginPage()
+      })
+    }
   }
 
   setRoute = (route) => {
@@ -278,7 +304,7 @@ class D5Onboarding {
     this.route = route
     const page = document.getElementById('onboarding-page')
     if (page) {
-      D5Onboarding.removeElement(document.querySelector('#onboarding-page'))
+      this.removeElement(document.querySelector('#onboarding-page'))
     }
     switch (route) {
       case 'login':
@@ -286,6 +312,9 @@ class D5Onboarding {
         break
       case 'signUp':
         this.renderSignUp()
+        break
+      case 'content': 
+        this.renderContent()
         break
       default:
         this.renderLogin()
@@ -296,7 +325,20 @@ class D5Onboarding {
   renderLoginPage() { 
     const d5LoginPage = document.createElement('d5-login-page');
 
-    const container = document.getElementById('container');
-    container.appendChild(d5LoginPage);
+    const container = document.querySelector(this.container);
+    const boardingPage = document.createElement('div')
+    boardingPage.id = 'onboarding-page'
+    container.appendChild(boardingPage);
+    boardingPage.appendChild(d5LoginPage)
+  }
+
+  renderContent() { 
+    console.log(1)
+  }
+
+  removeElement = (element) => {
+    if (element && element.parentNode) {
+      element.parentNode.removeChild(element)
+    }
   }
 }
