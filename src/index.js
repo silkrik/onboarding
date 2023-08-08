@@ -1,6 +1,7 @@
 const baseUrl = 'http://localhost:3000/api/v1'
 let D5FormValue = {}
 let D5FormErrorValue = {}
+let alertMessage = ''
 
 const setCookie = (name, value) => {
   const expirationDate = new Date()
@@ -94,6 +95,110 @@ const sendRequest = (method, url, data, callback) => {
 
   xhr.send(JSON.stringify(data));
 }
+
+class D5MessageElement extends HTMLElement { 
+  constructor() { 
+    super()
+
+    const D5Message = document.createElement('template')
+    D5Message.innerHTML = `
+      <style>
+        #message-container {
+          position: fixed;
+          top: 20px;
+          right: 20px;
+        }
+
+        .message {
+          opacity: 0;
+          transition: opacity 0.3s ease-in-out;
+          box-shadow: rgba(49, 52, 64, 0.2) 0px 1px 6px;
+          border-left: 0.25rem solid rgb(219, 54, 67);
+          border-radius: 0.25rem;
+          padding-right: 20px;
+          margin-bottom: 16px;
+          background-color: white
+        }
+
+        .message img {
+          margin: 0 8px;
+          width: 16px;
+          height: 16px;
+          margin-top: 12px;
+        }
+
+        .message p {
+          font-size: 12px;
+          max-width: 360px;
+        }
+
+        .message.show {
+          opacity: 1;
+        }
+
+        .close {
+          display: flex;
+          justify-content: right;
+        }
+
+        .message span {
+          transform: translateX(8px);
+          cursor: pointer;
+        }
+      </style>
+
+      <div id="message-container"></div>
+    `
+
+    const cloneContent = D5Message.content.cloneNode(true)
+
+    const shadow = this.attachShadow({mode: "open"})
+    shadow.append(cloneContent)
+  }
+
+  connectedCallback() { 
+    if (this.showMessage) {
+      this.createMessage()
+    }
+    this.showMessage = true
+  }
+
+  createMessage = () => {
+    const displayTime = 3000;
+    const messageContainer = this.shadowRoot.getElementById('message-container');
+    const messageElement = document.createElement('div');
+    messageElement.classList.add('message');
+    messageElement.innerHTML = `
+      <div class="close">
+        <img src='./assets/error.svg' />
+        <p>${alertMessage}</p>
+        <span class="close-button">&times;</span>
+      </div>
+    `;
+    messageContainer.appendChild(messageElement);
+
+    setTimeout(() => {
+      messageElement.classList.add('show');
+    }, 0);
+
+    setTimeout(() => {
+      messageElement.classList.remove('show');
+      setTimeout(() => {
+        messageElement.remove(); 
+      }, 300); 
+    }, displayTime);
+
+    const closeButton = messageElement.querySelector('.close-button');
+    closeButton.addEventListener('click', () => {
+      messageElement.classList.remove('show');
+      setTimeout(() => {
+        messageElement.remove(); 
+      }, 300); 
+    });
+  }
+}
+
+customElements.define("d5-message", D5MessageElement)
 
 class D5InputElement extends HTMLElement { 
   constructor() {
@@ -290,7 +395,9 @@ class D5LoginPage extends HTMLElement {
     if (D5FormValue?.email?.trim() && D5FormValue?.password?.trim() && !D5FormErrorValue?.email && !D5FormErrorValue?.password) {
       sendRequest("POST", `${baseUrl}/onboarding/login`, D5FormValue, (error,response) => {
         if (error) {
-          console.log(error.meta);
+          const customElement = document.querySelector('d5-message');
+          alertMessage = error.meta.message
+          customElement.createMessage();
         } else {
           setCookie('d5-onboarding-token', response.data.access)
           d5Onboarding.setRoute('content')
@@ -347,11 +454,13 @@ class D5Onboarding {
 
   renderLoginPage() { 
     const d5LoginPage = document.createElement('d5-login-page');
+    const d5Message = document.createElement('d5-message');
 
     const container = document.querySelector(this.container);
     const boardingPage = document.createElement('div')
     boardingPage.id = 'onboarding-page'
     container.appendChild(boardingPage);
+    container.appendChild(d5Message);
     boardingPage.appendChild(d5LoginPage)
   }
 

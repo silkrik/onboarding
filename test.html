@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <style>
+    #message-container {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+    }
+
+    .message {
+      opacity: 0;
+      transition: opacity 0.3s ease-in-out;
+      box-shadow: rgba(49, 52, 64, 0.2) 0px 1px 6px;
+      border-left: 0.25rem solid rgb(219, 54, 67);
+      border-radius: 0.25rem;
+      padding-right: 20px;
+      margin-bottom: 16px;
+    }
+
+    .message img {
+      margin: 0 8px;
+      width: 16px;
+      height: 16px;
+      margin-top: 12px;
+    }
+
+    .message p {
+      font-size: 12px;
+      max-width: 360px;
+    }
+
+    .message.show {
+      opacity: 1;
+    }
+
+    .close {
+      display: flex;
+      justify-content: right;
+    }
+
+    .message span {
+      transform: translateX(8px);
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div id="message-container"></div>
+  <button id="show-message-button">显示提示框</button>
+
+  <script>
+    const messageContainer = document.getElementById('message-container');
+    const showMessageButton = document.getElementById('show-message-button');
+    const displayTime = 3000;
+
+    showMessageButton.addEventListener('click', () => {
+      createMessage();
+    });
+
+    const createMessage = () => {
+      const messageElement = document.createElement('div');
+      messageElement.classList.add('message');
+      messageElement.innerHTML = `
+        <div class="close">
+          <img src='./assets/error.svg' />
+          <p>这是提示信息显示提示框显示提示框显示提示框显示提示框显示提示框显示提示框</p>
+          <span class="close-button">&times;</span>
+        </div>
+      `;
+      messageContainer.appendChild(messageElement);
+
+      setTimeout(() => {
+        messageElement.classList.add('show');
+      }, 0);
+
+      setTimeout(() => {
+        messageElement.classList.remove('show');
+        setTimeout(() => {
+          messageElement.remove(); 
+        }, 300); 
+      }, displayTime);
+
+      const closeButton = messageElement.querySelector('.close-button');
+      closeButton.addEventListener('click', () => {
+        messageElement.classList.remove('show');
+        setTimeout(() => {
+          messageElement.remove(); 
+        }, 300); 
+      });
+    }
+  </script>
+</body>
+</html>
