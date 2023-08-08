@@ -1,25 +1,89 @@
-const formValue = {}
-const formErrorValue = {}
+let formValue = {}
+let formErrorValue = {}
+
+getErrorMessage = (rules, value, name) => {
+  const formatName = (name) => name.slice(0, 1).toUpperCase() + name.slice(1).toLowerCase()
+  if (typeof value === 'string') {
+    const trimValue = value.trim()
+    if (rules?.required !== undefined && !trimValue?.length) {
+      return rules.required === ''
+        ? `${name} is a required field.` : rules.required
+    }
+    if (rules?.pattern) {
+      const pattern = typeof rules?.pattern === 'string'
+        ? {
+          value: rules?.pattern,
+          message: 'Please enter the correct format',
+        }
+        : rules?.pattern
+      if (!new RegExp(pattern.value)?.test(trimValue)) {
+        return rules.patternMessage ?? 'Please enter the correct format'
+      }
+    }
+    if (rules?.maxLength) {
+      const defaultMessage = `${formatName(name)} cannot be more than ${rules?.maxLength} charactors.`
+      const maxLength = typeof rules?.maxLength === 'number'
+        ? {
+          value: rules?.maxLength,
+          message: defaultMessage,
+        }
+        : rules?.maxLength
+      if (trimValue.length > maxLength.value) {
+        return maxLength.message ?? defaultMessage
+      }
+    }
+    if (rules?.minLength) {
+      const defaultMessage = `${formatName(name)} cannot be less than ${rules?.minLength} charactors.`
+      const minLength = typeof rules?.minLength === 'number'
+        ? {
+          value: rules?.minLength,
+          message: defaultMessage,
+        }
+        : rules?.minLength
+      if (trimValue.length < minLength.value) {
+        return minLength.message ?? defaultMessage
+      }
+    }
+    if (rules?.validator) {
+      const message = rules?.validator(trimValue)
+      return message ?? 'Please '
+    }
+  }
+  if (value instanceof Array) {
+    if (rules?.required && !value?.length) {
+      return typeof rules.required === 'string'
+        ? rules.required : `${formatName(name)} is a required field.`
+    }
+  }
+  return ''
+}
 
 class D5InputElement extends HTMLElement { 
   constructor() { 
     super()
-
     this.D5Input = document.createElement('template')
     this.innerHTML = `
       <style>
-      input {
-        width: 100%;
-        border: 1px solid #d9d9d9;
-        height: 32px;
-        margin-top: 5px;
-        border-radius: 4px;
-        text-indent: 4px;
-        outline: none;
-      }
+        input {
+          width: 100%;
+          border: 1px solid #d9d9d9;
+          height: 32px;
+          margin-top: 5px;
+          border-radius: 4px;
+          text-indent: 4px;
+          outline: none;
+          font-size: 13px;
+        }
+
+        .error_message {
+          font-size: 12px;
+          margin-top: 2px;
+          color: rgb(219, 54, 67);
+        }
       </style>
 
       <input />
+      <div class="error_message" />
     `
     this.D5Input.innerHTML = this.innerHTML
 
@@ -29,13 +93,14 @@ class D5InputElement extends HTMLElement {
     element.addEventListener('input', (event) => { 
       formValue[this.name] = event.target.value
 
-      // new Function(this.getAttribute('validator'))()
-      formErrorValue[this.name] = this.getErrorMessage({
+      new Function(this.getAttribute('validator'))()
+      formErrorValue[this.name] = getErrorMessage({
         required: this.getAttribute('required'),
         pattern: this.getAttribute('pattern'),
-        maxLength: this.getAttribute('maxLength'),
-        minLength: this.getAttribute('minLength'),
-      }, formValue[this.name])
+        maxLength: Number(this.getAttribute('maxLength')),
+        minLength: Number(this.getAttribute('minLength')),
+        patternMessage: this.getAttribute('patternMessage'),
+      }, formValue[this.name], this.name)
 
       this.updateStyle()
     })
@@ -47,69 +112,17 @@ class D5InputElement extends HTMLElement {
   updateStyle = () => {
     const shadow = this.shadowRoot;
     const inputElement = shadow.querySelector('input');
-    const borderColor = formErrorValue[this.name] ? 'red' : '#d9d9d9';
+    const borderColor = formErrorValue[this.name] ? 'rgb(219, 54, 67)' : '#d9d9d9';
     inputElement.style.border = `1px solid ${borderColor}`;
+
+    const errorMessageElement = shadow.querySelector('.error_message')
+    errorMessageElement.innerHTML = formErrorValue[this.name] ?? ''
   }
 
   connectedCallback() {
     this.name = this.getAttribute('name');
-  }
-
-  getErrorMessage = (rules, value) => {
-    const formatName = (name) => name.slice(0, 1).toUpperCase() + name.slice(1).toLowerCase()
-    if (typeof value === 'string') {
-      const trimValue = value.trim()
-      if (rules?.required !== undefined && !trimValue?.length) {
-        return rules.required === ''
-          ? `${this.name} is a required field.` : rules.required
-      }
-      if (rules?.pattern) {
-        const pattern = typeof rules?.pattern === 'string'
-          ? {
-            value: rules?.pattern,
-            message: 'Please enter the correct format',
-          }
-          : rules?.pattern
-        if (!new RegExp(pattern.value)?.test(trimValue)) {
-          return pattern.message ?? 'Please enter the correct format'
-        }
-      }
-      if (rules?.maxLength) {
-        const defaultMessage = `${formatName(name)} cannot be more than ${rules?.maxLength} charactors.`
-        const maxLength = typeof rules?.maxLength === 'number'
-          ? {
-            value: rules?.maxLength,
-            message: defaultMessage,
-          }
-          : rules?.maxLength
-        if (trimValue.length > maxLength.value) {
-          return maxLength.message ?? defaultMessage
-        }
-      }
-      if (rules?.minLength) {
-        const defaultMessage = `${formatName(name)} cannot be less than ${rules?.minLength} charactors.`
-        const minLength = typeof rules?.minLength === 'number'
-          ? {
-            value: rules?.minLength,
-            message: defaultMessage,
-          }
-          : rules?.minLength
-        if (trimValue.length < minLength.value) {
-          return minLength.message ?? defaultMessage
-        }
-      }
-      if (rules?.validator) {
-        const message = rules?.validator(trimValue)
-        return message ?? 'Please '
-      }
-    }
-    if (value instanceof Array) {
-      if (rules?.required && !value?.length) {
-        return typeof rules.required === 'string'
-          ? rules.required : `${formatName(name)} is a required field.`
-      }
-    }
-    return ''
+    formValue = {}
+    formErrorValue = {}
   }
 }
 
@@ -136,6 +149,8 @@ class D5LoginPage extends HTMLElement {
         label {
           cursor: pointer;
           font-size: 12px;
+          font-weight: 600;
+          color: rgb(49, 52, 64);
         }
       
         button.login_button {
@@ -171,13 +186,31 @@ class D5LoginPage extends HTMLElement {
         <h2>
           Login
         </h2>
-        <label for="account">Account</label>
+        <label for="account">
+          Account
+        </label>
         <div class="input">
-          <d5-input type="text" id="account" name="loginEmail" required />
+          <d5-input
+            type="text"
+            id="account"
+            name="account"
+            required="Account is a required field."
+            pattern="^\\S+@[a-zA-Z0-9._-]+\\.[a-zA-Z0-9._-]{2,}$"
+            patternMessage="Please enter your email address."
+          />
         </div>
-        <label for="password">Password</label>
+        <label for="password">
+          Password
+        </label>
         <div class="input">
-          <d5-input type="text" id="password" name="loginPassword" />
+          <d5-input
+            type="text"
+            id="password"
+            name="password"
+            maxLength="16"
+            minLength="6"
+            required="Password is a required field."
+          />
         </div>
         <button class="login_button" onClick={D5LoginPage.onSubmit()}>
           Login
