@@ -1,7 +1,8 @@
-let formValue = {}
-let formErrorValue = {}
+const baseUrl = 'http://localhost:3000/api/v1'
+let D5FormValue = {}
+let D5FormErrorValue = {}
 
-getErrorMessage = (rules, value, name) => {
+const getErrorMessage = (rules, value, name) => {
   const formatName = (name) => name.slice(0, 1).toUpperCase() + name.slice(1).toLowerCase()
   if (typeof value === 'string') {
     const trimValue = value.trim()
@@ -58,6 +59,24 @@ getErrorMessage = (rules, value, name) => {
   return ''
 }
 
+const sendRequest = (method, url, data, callback) => {
+  const xhr = new XMLHttpRequest();
+  xhr.open(method, url, true);
+  xhr.setRequestHeader("Content-Type", "application/json");
+
+  xhr.onreadystatechange = function() {
+    if (xhr.readyState === XMLHttpRequest.DONE) {
+      if (!JSON.parse(xhr.responseText).data) {
+        callback(JSON.parse(xhr.responseText));
+      } else { 
+        callback('')
+      }
+    }
+  };
+
+  xhr.send(JSON.stringify(data));
+}
+
 class D5InputElement extends HTMLElement { 
   constructor() { 
     super()
@@ -67,7 +86,7 @@ class D5InputElement extends HTMLElement {
         input {
           width: 100%;
           border: 1px solid #d9d9d9;
-          height: 32px;
+          height: 30px;
           margin-top: 5px;
           border-radius: 4px;
           text-indent: 4px;
@@ -91,16 +110,16 @@ class D5InputElement extends HTMLElement {
     const element = cloneContent.querySelector('input')
   
     element.addEventListener('input', (event) => { 
-      formValue[this.name] = event.target.value
+      D5FormValue[this.name] = event.target.value
 
       new Function(this.getAttribute('validator'))()
-      formErrorValue[this.name] = getErrorMessage({
+      D5FormErrorValue[this.name] = getErrorMessage({
         required: this.getAttribute('required'),
         pattern: this.getAttribute('pattern'),
         maxLength: Number(this.getAttribute('maxLength')),
         minLength: Number(this.getAttribute('minLength')),
         patternMessage: this.getAttribute('patternMessage'),
-      }, formValue[this.name], this.name)
+      }, D5FormValue[this.name], this.name)
 
       this.updateStyle()
     })
@@ -112,17 +131,15 @@ class D5InputElement extends HTMLElement {
   updateStyle = () => {
     const shadow = this.shadowRoot;
     const inputElement = shadow.querySelector('input');
-    const borderColor = formErrorValue[this.name] ? 'rgb(219, 54, 67)' : '#d9d9d9';
+    const borderColor = D5FormErrorValue[this.name] ? 'rgb(219, 54, 67)' : '#d9d9d9';
     inputElement.style.border = `1px solid ${borderColor}`;
 
     const errorMessageElement = shadow.querySelector('.error_message')
-    errorMessageElement.innerHTML = formErrorValue[this.name] ?? ''
+    errorMessageElement.innerHTML = D5FormErrorValue[this.name] ?? ''
   }
 
   connectedCallback() {
     this.name = this.getAttribute('name');
-    formValue = {}
-    formErrorValue = {}
   }
 }
 
@@ -193,7 +210,7 @@ class D5LoginPage extends HTMLElement {
           <d5-input
             type="text"
             id="account"
-            name="account"
+            name="email"
             required="Account is a required field."
             pattern="^\\S+@[a-zA-Z0-9._-]+\\.[a-zA-Z0-9._-]{2,}$"
             patternMessage="Please enter your email address."
@@ -229,7 +246,15 @@ class D5LoginPage extends HTMLElement {
   }
 
   static onSubmit() { 
-    console.log(formValue)
+    if (D5FormValue?.email?.trim() && D5FormValue?.password?.trim() && !D5FormErrorValue?.email && !D5FormErrorValue?.password) {
+      sendRequest("POST", `${baseUrl}/onboarding/login`, D5FormValue, (error) => {
+        if (error) {
+          console.log(error.meta);
+        } else {
+          console.log('Successfully login.');
+        }
+      });
+    }
   }
 }
 
@@ -247,6 +272,9 @@ class D5Onboarding {
   }
 
   setRoute = (route) => {
+    D5FormValue = {}
+    D5FormErrorValue = {}
+
     this.route = route
     const page = document.getElementById('onboarding-page')
     if (page) {
