@@ -215,6 +215,7 @@ class D5InputElement extends HTMLElement {
           text-indent: 4px;
           outline: none;
           font-size: 13px;
+          padding: 0;
         }
 
         .error_message {
@@ -229,9 +230,11 @@ class D5InputElement extends HTMLElement {
 
         .input_wrapper img {
           position: absolute;
-          right: 0;
-          top: 10px;
+          right: 8px;
+          top: 12px;
           cursor: pointer;
+          width: 20px;
+          height: 20px;
         }
 
         label {
@@ -341,7 +344,8 @@ class D5LoginPage extends HTMLElement {
           justify-content: space-between;
         }
         
-        .login_link a, .login_link_flex a {
+        span, a {
+          cursor: pointer; 
           font-size: 12px;
           text-decoration: none;
           color: #195aff;
@@ -353,40 +357,40 @@ class D5LoginPage extends HTMLElement {
           Login
         </h2>
         <form>
-        <div class="input">
-          <d5-input
-            type="text"
-            id="account"
-            label="Account"
-            name="email"
-            required="Account is a required field."
-            pattern="^\\S+@[a-zA-Z0-9._-]+\\.[a-zA-Z0-9._-]{2,}$"
-            patternMessage="Please enter your email address."
-          />
-        </div>
-        <div class="input">
-          <d5-input
-            type="password"
-            id="password"
-            name="password"
-            label="Password"
-            maxLength="16"
-            minLength="6"
-            required="Password is a required field."
-            icon="true"
-          />
-        </div>
-        <button
-          class="login_button"
-          onClick={D5LoginPage.onSubmit()}
-          type="button"
-        >
-          Login
-        </button>
-        <div class="login_link_flex">
-          <a href="#">Forgot?</a>
-          <a href="#">Account does not exist? Sign Up?</a>
-        </div>
+          <div>
+            <d5-input
+              type="text"
+              id="account"
+              label="Account"
+              name="email"
+              required="Account is a required field."
+              pattern="^\\S+@[a-zA-Z0-9._-]+\\.[a-zA-Z0-9._-]{2,}$"
+              patternMessage="Please enter your email address."
+            />
+          </div>
+          <div>
+            <d5-input
+              type="password"
+              id="password"
+              name="password"
+              label="Password"
+              maxLength="16"
+              minLength="6"
+              required="Password is a required field."
+              icon="true"
+            />
+          </div>
+          <button
+            class="login_button"
+            onClick={D5LoginPage.onSubmit()}
+            type="button"
+          >
+            Login
+          </button>
+          <div class="login_link_flex">
+            <a href="">Forgot?</a>
+            <span onClick="D5LoginPage.toSignUp()">Account does not exist? Sign Up?</span>
+          </div>
         </form>
       </div>
     `
@@ -406,14 +410,141 @@ class D5LoginPage extends HTMLElement {
           customElement.createMessage();
         } else {
           setCookie('d5-onboarding-token', response.data.access)
-          d5Onboarding.setRoute('content')
+          d5Onboarding?.setRoute('content')
         }
       });
     }
   }
+
+  static toSignUp = () => { 
+    d5Onboarding?.setRoute('signUp')
+  }
 }
 
 customElements.define('d5-login-page', D5LoginPage)
+
+class D5SignUpPage extends HTMLElement { 
+  constructor() { 
+    super()
+    const SignUpPage = document.createElement('template')
+    SignUpPage.innerHTML = `
+      <style>
+        .login_card {
+          max-width: 360px;
+          min-width: 180px;
+          padding: 48px;
+          background-color: #fff!important;
+          margin: auto;
+        }
+      
+        h2 {
+          margin-bottom: 24px;
+        }
+      
+        button.login_button {
+          background-color: #2852eb;
+          color: white;
+          height: 32px;
+          width: 100%;
+          outline: none;
+          border: none;
+          cursor: pointer;
+          border-radius: 4px;
+          margin: 16px 0;
+          font-size: 12px;
+        }
+
+        .verification_code_wrapper {
+          display: flex;
+          align-items: end;
+          justify-content: space-between;
+        }
+        
+        .verification_code {
+          width: 30%;
+          height: 32px;
+          font-size: 12px;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          border: 1px solid #d9d9d9;
+          border-radius: 4px;
+          margin-bottom: 2px;
+        }
+
+        .input {
+          width: 65%;
+        }
+        
+        .verification_code img {
+          width: 100%;
+          height: 100%;
+        }
+
+        .login_link {
+          text-align: center;
+        }
+
+        span, a {
+          cursor: pointer; 
+          font-size: 12px;
+          text-decoration: none;
+          color: #195aff;
+        }
+      </style>
+
+      <div class="login_card">
+        <h2>
+          Sign Up
+        </h2>
+        <div>
+          <d5-input
+            type="text"
+            id="email"
+            label="Email"
+            name="email"
+            required="Email is a required field."
+            pattern="^\\S+@[a-zA-Z0-9._-]+\\.[a-zA-Z0-9._-]{2,}$"
+            patternMessage="Please enter your email address."
+          />
+        </div>
+        <div class="verification_code_wrapper">
+          <div class="input">
+            <d5-input
+              type="text"
+              id="verification_code"
+              label="Verification Cod"
+              name="verification_code"
+              required="Email is a required field."
+              pattern="^\\S+@[a-zA-Z0-9._-]+\\.[a-zA-Z0-9._-]{2,}$"
+              patternMessage="Please enter your email address."
+            />
+          </div>
+          <div class="verification_code">
+            Send Code
+          </div>
+        </div>
+        <button class="login_button">
+          Sign up
+        </button>
+        <div class="login_link">
+          <span onClick="D5SignUpPage.toLogin()">Already sign up? Continue Onboarding</span>
+        </div>
+      </div>
+    `
+
+    const cloneContent = SignUpPage.content.cloneNode(true)
+
+    const shadow = this.attachShadow({mode: "open"})
+    shadow.append(cloneContent)
+  }
+
+  static toLogin = () => { 
+    d5Onboarding?.setRoute('login')
+  }
+}
+
+customElements.define('d5-sign-up-page',D5SignUpPage)
 
 class D5Onboarding { 
   constructor(config) { 
@@ -444,16 +575,16 @@ class D5Onboarding {
     }
     switch (route) {
       case 'login':
-        this.renderLogin()
+        this.renderLoginPage()
         break
       case 'signUp':
-        this.renderSignUp()
+        this.renderSignUpPage()
         break
       case 'content': 
         this.renderContent()
         break
       default:
-        this.renderLogin()
+        this.renderLoginPage()
         break
     }
   }
@@ -461,7 +592,6 @@ class D5Onboarding {
   renderLoginPage() { 
     const d5LoginPage = document.createElement('d5-login-page');
     const d5Message = document.createElement('d5-message');
-
     const container = document.querySelector(this.container);
     const boardingPage = document.createElement('div')
     boardingPage.id = 'onboarding-page'
@@ -472,6 +602,15 @@ class D5Onboarding {
 
   renderContent() { 
     console.log(1)
+  }
+
+  renderSignUpPage() { 
+    const d5LoginPage = document.createElement('d5-sign-up-page');
+    const container = document.querySelector(this.container);
+    const boardingPage = document.createElement('div')
+    boardingPage.id = 'onboarding-page'
+    container.appendChild(boardingPage);
+    boardingPage.appendChild(d5LoginPage)
   }
 
   removeElement = (element) => {
