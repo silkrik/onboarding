@@ -77,24 +77,26 @@ const getErrorMessage = (rules, value, name) => {
   return ''
 }
 
-const sendRequest = (method, url, data, callback) => {
-  const xhr = new XMLHttpRequest();
-  xhr.open(method, url, true);
-  xhr.setRequestHeader("Content-Type", "application/json");
+const sendRequest = (method, url, data) => {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open(method, url, true);
+    xhr.setRequestHeader("Content-Type", "application/json");
 
-  xhr.onreadystatechange = function() {
-    if (xhr.readyState === XMLHttpRequest.DONE) {
-      const response = JSON.parse(xhr.responseText)
-      if (!response.data) {
-        callback(JSON.parse(xhr.responseText));
-      } else { 
-        callback(null,response)
+    xhr.onreadystatechange = function() {
+      if (xhr.readyState === XMLHttpRequest.DONE) {
+        const response = JSON.parse(xhr.responseText);
+        if (!response.data) {
+          reject(JSON.parse(xhr.responseText));
+        } else {
+          resolve(response);
+        }
       }
-    }
-  };
+    };
 
-  xhr.send(JSON.stringify(data));
-}
+    xhr.send(JSON.stringify(data));
+  });
+};
 
 class D5MessageElement extends HTMLElement { 
   constructor() { 
@@ -163,7 +165,7 @@ class D5MessageElement extends HTMLElement {
     this.showMessage = true
   }
 
-  createMessage = () => {
+  createMessage() {
     const displayTime = 3000;
     const messageContainer = this.shadowRoot.getElementById('message-container');
     const messageElement = document.createElement('div');
@@ -212,7 +214,7 @@ class D5InputElement extends HTMLElement {
           height: 30px;
           margin-top: 5px;
           border-radius: 4px;
-          text-indent: 4px;
+          text-indent: 6px; 
           outline: none;
           font-size: 13px;
           padding: 0;
@@ -287,7 +289,7 @@ class D5InputElement extends HTMLElement {
     shadow.append(cloneContent)
   }
 
-  updateStyle = () => {
+  updateStyle() {
     const shadow = this.shadowRoot;
     const inputElement = shadow.querySelector('input');
     const borderColor = D5FormErrorValue[this.name] ? 'rgb(219, 54, 67)' : '#d9d9d9';
@@ -401,7 +403,7 @@ class D5LoginPage extends HTMLElement {
     shadow.append(cloneContent)
   }
 
-  static onSubmit = () => { 
+  static onSubmit() { 
     if (D5FormValue?.email?.trim() && D5FormValue?.password?.trim() && !D5FormErrorValue?.email && !D5FormErrorValue?.password) {
       sendRequest("POST", `${baseUrl}/onboarding/login`, D5FormValue, (error,response) => {
         if (error) {
@@ -416,7 +418,7 @@ class D5LoginPage extends HTMLElement {
     }
   }
 
-  static toSignUp = () => { 
+  static toSignUp() { 
     d5Onboarding?.setRoute('signUp')
   }
 }
@@ -426,8 +428,9 @@ customElements.define('d5-login-page', D5LoginPage)
 class D5SignUpPage extends HTMLElement { 
   constructor() { 
     super()
-    const SignUpPage = document.createElement('template')
-    SignUpPage.innerHTML = `
+    const signUpPage = document.createElement('template')
+
+    signUpPage.innerHTML = `
       <style>
         .login_card {
           max-width: 360px;
@@ -461,8 +464,11 @@ class D5SignUpPage extends HTMLElement {
         }
         
         .verification_code {
+          position: relative;
+          z-index: 2;
+          cursor: pointer;
           width: 30%;
-          height: 32px;
+          height: 30px;
           font-size: 12px;
           display: flex;
           justify-content: center;
@@ -473,7 +479,7 @@ class D5SignUpPage extends HTMLElement {
         }
 
         .input {
-          width: 65%;
+          width: 67%;
         }
         
         .verification_code img {
@@ -521,7 +527,7 @@ class D5SignUpPage extends HTMLElement {
             />
           </div>
           <div class="verification_code">
-            Send Code
+            <img src=${this.verification_code} />
           </div>
         </div>
         <button class="login_button">
@@ -531,15 +537,33 @@ class D5SignUpPage extends HTMLElement {
           <span onClick="D5SignUpPage.toLogin()">Already sign up? Continue Onboarding</span>
         </div>
       </div>
-    `
+    `;
+    const shadow = this.attachShadow({ mode: 'open' });
+    shadow.appendChild(signUpPage.content.cloneNode(true));
 
-    const cloneContent = SignUpPage.content.cloneNode(true)
-
-    const shadow = this.attachShadow({mode: "open"})
-    shadow.append(cloneContent)
+    this.getVerificationCode()
   }
 
-  static toLogin = () => { 
+  async getVerificationCode() { 
+    try {
+      const response = await sendRequest("POST", `${baseUrl}/captcha`);
+      this.verification_code = `data:${response?.data?.image_type};${response?.data?.image_decode},${response?.data?.captcha_image}`
+      const verificationImg = this.shadowRoot.querySelector('.login_card .verification_code img')
+      verificationImg.src = this.verification_code
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
+  connectedCallback() { 
+    const verificationCodeBox = this.shadowRoot.querySelector('.login_card .verification_code')
+
+    verificationCodeBox.addEventListener('click', () => {
+      this.getVerificationCode()
+    })
+  }
+
+  static toLogin() { 
     d5Onboarding?.setRoute('login')
   }
 }
@@ -551,20 +575,27 @@ class D5Onboarding {
     this.trigger = config?.trigger || 'flat'
     this.container = config?.container
     this.route = 'login'
+    this.initD5Message()
   }
 
   init() { 
     if (this.trigger === 'flat') {
-      this.renderLoginPage()
+      this.setRoute('login')
     } else { 
       const container = document.querySelector(this.container)
       container.addEventListener('click', () => { 
-        this.renderLoginPage()
+        this.setRoute('login')
       })
     }
   }
 
-  setRoute = (route) => {
+  initD5Message(){ 
+    const d5Message = document.createElement('d5-message');
+    const container = document.querySelector(this.container);
+    container.appendChild(d5Message);
+  }
+
+  setRoute(route){
     D5FormValue = {}
     D5FormErrorValue = {}
 
@@ -573,44 +604,26 @@ class D5Onboarding {
     if (page) {
       this.removeElement(document.querySelector('#onboarding-page'))
     }
+
+    const container = document.querySelector(this.container);
+    const boardingPage = document.createElement('div')
+    boardingPage.id = 'onboarding-page'
+    container.appendChild(boardingPage);
+
     switch (route) {
       case 'login':
-        this.renderLoginPage()
+        boardingPage.appendChild(document.createElement('d5-login-page'))
         break
       case 'signUp':
-        this.renderSignUpPage()
+        boardingPage.appendChild(document.createElement('d5-sign-up-page'))
         break
       case 'content': 
-        this.renderContent()
+        console.log(1)
         break
       default:
-        this.renderLoginPage()
+        boardingPage.appendChild(document.createElement('d5-login-page'))
         break
     }
-  }
-
-  renderLoginPage() { 
-    const d5LoginPage = document.createElement('d5-login-page');
-    const d5Message = document.createElement('d5-message');
-    const container = document.querySelector(this.container);
-    const boardingPage = document.createElement('div')
-    boardingPage.id = 'onboarding-page'
-    container.appendChild(boardingPage);
-    container.appendChild(d5Message);
-    boardingPage.appendChild(d5LoginPage)
-  }
-
-  renderContent() { 
-    console.log(1)
-  }
-
-  renderSignUpPage() { 
-    const d5LoginPage = document.createElement('d5-sign-up-page');
-    const container = document.querySelector(this.container);
-    const boardingPage = document.createElement('div')
-    boardingPage.id = 'onboarding-page'
-    container.appendChild(boardingPage);
-    boardingPage.appendChild(d5LoginPage)
   }
 
   removeElement = (element) => {
