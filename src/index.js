@@ -403,18 +403,17 @@ class D5LoginPage extends HTMLElement {
     shadow.append(cloneContent)
   }
 
-  static onSubmit() { 
+  static async onSubmit() { 
     if (D5FormValue?.email?.trim() && D5FormValue?.password?.trim() && !D5FormErrorValue?.email && !D5FormErrorValue?.password) {
-      sendRequest("POST", `${baseUrl}/onboarding/login`, D5FormValue, (error,response) => {
-        if (error) {
-          const customElement = document.querySelector('d5-message');
-          alertMessage = error.meta.message
-          customElement.createMessage();
-        } else {
-          setCookie('d5-onboarding-token', response.data.access)
-          d5Onboarding?.setRoute('content')
-        }
-      });
+      try {
+        const response = await sendRequest("POST", `${baseUrl}/onboarding/login`, D5FormValue);
+        setCookie('d5-onboarding-token', response.data.access)
+        d5Onboarding?.setRoute('content')
+      } catch (error) {
+        const customElement = document.querySelector('d5-message');
+        alertMessage = error.meta.message
+        customElement.createMessage();
+      }
     }
   }
 
@@ -459,7 +458,6 @@ class D5SignUpPage extends HTMLElement {
 
         .verification_code_wrapper {
           display: flex;
-          align-items: end;
           justify-content: space-between;
         }
         
@@ -475,7 +473,7 @@ class D5SignUpPage extends HTMLElement {
           align-items: center;
           border: 1px solid #d9d9d9;
           border-radius: 4px;
-          margin-bottom: 2px;
+          margin-top: 26px;
         }
 
         .input {
@@ -519,11 +517,10 @@ class D5SignUpPage extends HTMLElement {
             <d5-input
               type="text"
               id="verification_code"
-              label="Verification Cod"
-              name="verification_code"
-              required="Email is a required field."
-              pattern="^\\S+@[a-zA-Z0-9._-]+\\.[a-zA-Z0-9._-]{2,}$"
-              patternMessage="Please enter your email address."
+              label="Verification Code"
+              name="captcha_value"
+              maxLength="4"
+              required="Verification Code is a required field."
             />
           </div>
           <div class="verification_code">
@@ -548,10 +545,31 @@ class D5SignUpPage extends HTMLElement {
     try {
       const response = await sendRequest("POST", `${baseUrl}/captcha`);
       this.verification_code = `data:${response?.data?.image_type};${response?.data?.image_decode},${response?.data?.captcha_image}`
+      this.captcha_key = response.data.captcha_key
       const verificationImg = this.shadowRoot.querySelector('.login_card .verification_code img')
       verificationImg.src = this.verification_code
     } catch (error) {
-      console.log(error);
+      const customElement = document.querySelector('d5-message');
+      alertMessage = error.meta.message
+      customElement.createMessage();
+    }
+  }
+
+  async onSubmit() { 
+    try {
+      await sendRequest("POST", `${baseUrl}/onboarding/sign-up`, {
+        captcha_key: this.captcha_key,
+        captcha_value: D5FormValue.captcha_value,
+        email: D5FormValue.email,
+        url: window.location.hostname
+      });
+      alertMessage = 'Successfully sign up.'
+      customElement.createMessage();
+      d5Onborading.setRoute('login')
+    } catch (error) {
+      const customElement = document.querySelector('d5-message');
+      alertMessage = error.meta.message
+      customElement.createMessage();
     }
   }
 
@@ -560,6 +578,12 @@ class D5SignUpPage extends HTMLElement {
 
     verificationCodeBox.addEventListener('click', () => {
       this.getVerificationCode()
+    })
+
+    const button = this.shadowRoot.querySelector('button')
+
+    button.addEventListener('click', () => { 
+      this.onSubmit()
     })
   }
 
