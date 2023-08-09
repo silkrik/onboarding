@@ -352,6 +352,7 @@ class D5LoginPage extends HTMLElement {
         <h2>
           Login
         </h2>
+        <form>
         <div class="input">
           <d5-input
             type="text"
@@ -375,13 +376,18 @@ class D5LoginPage extends HTMLElement {
             icon="true"
           />
         </div>
-        <button class="login_button" onClick={D5LoginPage.onSubmit()}>
+        <button
+          class="login_button"
+          onClick={D5LoginPage.onSubmit()}
+          type="button"
+        >
           Login
         </button>
         <div class="login_link_flex">
           <a href="#">Forgot?</a>
           <a href="#">Account does not exist? Sign Up?</a>
         </div>
+        </form>
       </div>
     `
   
