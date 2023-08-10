@@ -1,7 +1,7 @@
 const baseUrl = 'http://localhost:3000/api/v1'
 let D5FormValue = {}
 let D5FormErrorValue = {}
-let alertMessage = ''
+let messageValue = {}
 
 const setCookie = (name, value) => {
   const expirationDate = new Date()
@@ -115,11 +115,18 @@ class D5MessageElement extends HTMLElement {
           opacity: 0;
           transition: opacity 0.3s ease-in-out;
           box-shadow: rgba(49, 52, 64, 0.2) 0px 1px 6px;
-          border-left: 0.25rem solid rgb(219, 54, 67);
           border-radius: 0.25rem;
           padding-right: 20px;
           margin-bottom: 16px;
           background-color: white
+        }
+
+        .error_message{
+          border-left: 0.25rem solid rgb(219, 54, 67);
+        }
+
+        .success_message {
+          border-left: 0.25rem solid rgb(42, 171, 63);
         }
 
         .message img {
@@ -169,11 +176,12 @@ class D5MessageElement extends HTMLElement {
     const displayTime = 3000;
     const messageContainer = this.shadowRoot.getElementById('message-container');
     const messageElement = document.createElement('div');
-    messageElement.classList.add('message');
+    messageElement.classList.add('message')
+    messageElement.classList.add(messageValue.type === 'error' ? 'error_message' : 'success_message');
     messageElement.innerHTML = `
       <div class="close">
-        <img src='./assets/error.svg' />
-        <p>${alertMessage}</p>
+        <img src=${messageValue.type === 'error' ? './assets/error.svg' : './assets/success.svg'} />
+        <p>${messageValue.value}</p>
         <span class="close-button">&times;</span>
       </div>
     `;
@@ -405,14 +413,23 @@ class D5LoginPage extends HTMLElement {
 
   static async onSubmit() { 
     if (D5FormValue?.email?.trim() && D5FormValue?.password?.trim() && !D5FormErrorValue?.email && !D5FormErrorValue?.password) {
+      const D5Message = document.querySelector('d5-message');
       try {
         const response = await sendRequest("POST", `${baseUrl}/onboarding/login`, D5FormValue);
         setCookie('d5-onboarding-token', response.data.access)
         d5Onboarding?.setRoute('content')
+        messageValue = {
+          value: 'Successfully Login',
+          type: 'success'
+        }
+        D5Message.createMessage();
       } catch (error) {
-        const customElement = document.querySelector('d5-message');
-        alertMessage = error.meta.message
-        customElement.createMessage();
+        const D5Message = document.querySelector('d5-message');
+        messageValue = {
+          value: error.meta.message,
+          type: 'error'
+        }
+        D5Message.createMessage();
       }
     }
   }
@@ -549,13 +566,17 @@ class D5SignUpPage extends HTMLElement {
       const verificationImg = this.shadowRoot.querySelector('.login_card .verification_code img')
       verificationImg.src = this.verification_code
     } catch (error) {
-      const customElement = document.querySelector('d5-message');
-      alertMessage = error.meta.message
-      customElement.createMessage();
+      const D5Message = document.querySelector('d5-message');
+      messageValue = {
+        value: error.meta.message,
+        type: 'error'
+      }
+      D5Message.createMessage();
     }
   }
 
   async onSubmit() { 
+    const D5Message = document.querySelector('d5-message');
     try {
       await sendRequest("POST", `${baseUrl}/onboarding/sign-up`, {
         captcha_key: this.captcha_key,
@@ -563,13 +584,18 @@ class D5SignUpPage extends HTMLElement {
         email: D5FormValue.email,
         url: window.location.hostname
       });
-      alertMessage = 'Successfully sign up.'
-      customElement.createMessage();
+      messageValue = {
+        value: 'Successfully sign up.',
+        type: 'success'
+      }
+      D5Message.createMessage();
       d5Onborading.setRoute('login')
     } catch (error) {
-      const customElement = document.querySelector('d5-message');
-      alertMessage = error.meta.message
-      customElement.createMessage();
+      messageValue = {
+        value: error.meta.message,
+        type: 'error'
+      }
+      D5Message.createMessage();
     }
   }
 
