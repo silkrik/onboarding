@@ -1,4 +1,6 @@
 const baseUrl = 'http://localhost:3000/api/v1'
+let url = ''
+let captcha_key = ''
 let D5FormValue = {}
 let D5FormErrorValue = {}
 let messageValue = {}
@@ -562,7 +564,7 @@ class D5SignUpPage extends HTMLElement {
     try {
       const response = await sendRequest("POST", `${baseUrl}/captcha`);
       this.verification_code = `data:${response?.data?.image_type};${response?.data?.image_decode},${response?.data?.captcha_image}`
-      this.captcha_key = response.data.captcha_key
+      captcha_key = response.data.captcha_key
       const verificationImg = this.shadowRoot.querySelector('.login_card .verification_code img')
       verificationImg.src = this.verification_code
     } catch (error) {
@@ -575,21 +577,21 @@ class D5SignUpPage extends HTMLElement {
     }
   }
 
-  async onSubmit() { 
+  static async onSubmit() { 
     const D5Message = document.querySelector('d5-message');
     try {
       await sendRequest("POST", `${baseUrl}/onboarding/sign-up`, {
-        captcha_key: this.captcha_key,
+        captcha_key,
         captcha_value: D5FormValue.captcha_value,
         email: D5FormValue.email,
-        url: window.location.hostname
+        url,
       });
       messageValue = {
         value: 'Successfully sign up.',
         type: 'success'
       }
       D5Message.createMessage();
-      d5Onborading.setRoute('login')
+      d5Onboarding?.setRoute('login')
     } catch (error) {
       messageValue = {
         value: error.meta.message,
@@ -609,7 +611,7 @@ class D5SignUpPage extends HTMLElement {
     const button = this.shadowRoot.querySelector('button')
 
     button.addEventListener('click', () => { 
-      this.onSubmit()
+      D5SignUpPage.onSubmit()
     })
   }
 
@@ -625,6 +627,7 @@ class D5Onboarding {
     this.trigger = config?.trigger || 'flat'
     this.container = config?.container
     this.route = 'login'
+    url = config.url || ''
     this.initD5Message()
   }
 
