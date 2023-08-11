@@ -254,7 +254,7 @@ class D5InputElement extends HTMLElement {
 
         .error_message {
           font-size: 12px;
-          margin-top: 2px;
+          margin-top: 4px;
           color: rgb(219, 54, 67);
         }
 
@@ -264,6 +264,7 @@ class D5InputElement extends HTMLElement {
 
         .input_wrapper img {
           position: absolute;
+          z-index: 6;
           right: 8px;
           top: 12px;
           cursor: pointer;
@@ -347,6 +348,153 @@ class D5InputElement extends HTMLElement {
 
 customElements.define('d5-input', D5InputElement)
 
+class D5NewInput extends HTMLElement {
+  
+  constructor() { 
+    super()
+  }
+
+  connectedCallback() { 
+    this.name = this.getAttribute('name')
+    
+    this.render()
+  }
+
+  render() { 
+    const D5NewInput = document.createElement('template')
+
+    D5NewInput.innerHTML = `
+      <style>
+        .d5_new_input {
+          position: relative;
+          padding-top: ${this.getAttribute('label') ? '21px' : '0'}
+        }
+
+        input {
+          width: 100%;
+          position: relative;
+          z-index: 4;
+          width: 100%;
+          border: 1px solid #d9d9d9;
+          height: 30px;
+          margin-top: 5px;
+          border-radius: 10px;
+          text-indent: 16px; 
+          outline: none;
+          font-size: 13px;
+          padding: 2px 0;
+          transition: all 0.6s;
+        }
+
+        label {
+          position: absolute;
+          top: 4px;
+          left: -6px;
+          z-index: 5;
+          cursor: pointer;
+          font-size: 12px;
+          font-weight: 600;
+          color: rgb(49, 52, 64);
+          transition: all 0.3s;
+          background-color: white;
+          padding: 0 6px;
+        }
+
+        .error_message {
+          font-size: 12px;
+          margin-top: 4px;
+          color: rgb(219, 54, 67);
+        }
+
+        .input_wrapper img {
+          position: absolute;
+          right: 12px;
+          top: 34px;
+          cursor: pointer;
+          width: 20px;
+          height: 20px;
+          z-index: 8
+        }
+
+        input:focus ~ label {
+          left: 16px;
+          top: 18px;
+        }
+
+        input:focus {
+          border: 1px solid #0D52FF!important;
+          padding-top: 4px;
+          padding-bottom: 0px;
+        }
+
+        img {
+          display: none;
+        }
+
+        .success img.success {
+          display: block
+        }
+
+        .error img.error {
+          display: block
+        }
+      </style>
+
+      <div class="d5_new_input">
+        <div class="input_wrapper">
+          <input type=${this.getAttribute('type')} id=${this.getAttribute('id')} />
+          ${this.getAttribute('label') ?
+        `<label for=${this.getAttribute('id')}>
+            ${this.getAttribute('label')}${this.getAttribute('required') ? ' *': ''} 
+          </label>`
+          : '<div></div>'}
+          <div class="border"></div>
+          <div id="img-wrapper">
+            <img class="success" src="./assets/d5-new-input/success.svg" />
+            <img class="error" src="./assets/d5-new-input/error.svg" />
+          </div>
+        </div>
+        <div class="error_message" />
+      </div>
+    `
+
+    const cloneContent = D5NewInput.content.cloneNode(true)
+
+    const inputElement = cloneContent.querySelector('input')
+
+    inputElement.addEventListener('input', (event) => {
+      D5FormValue[this.name] = event.target.value
+
+      new Function(this.getAttribute('validator'))()
+      D5FormErrorValue[this.name] = getErrorMessage({
+        required: this.getAttribute('required'),
+        pattern: this.getAttribute('pattern'),
+        maxLength: Number(this.getAttribute('maxLength')),
+        minLength: Number(this.getAttribute('minLength')),
+        patternMessage: this.getAttribute('patternMessage'),
+      }, D5FormValue[this.name], this.name)
+
+      this.updateStyle()
+    })
+
+    const shadow = this.attachShadow({mode: 'open'})
+    shadow.append(cloneContent)
+  }
+
+  updateStyle() {
+    const shadow = this.shadowRoot;
+    const inputElement = shadow.querySelector('input');
+    const errorMessageElement = shadow.querySelector('.error_message')
+    const imgWrapper = shadow.querySelector('#img-wrapper')
+    imgWrapper.className = D5FormErrorValue[this.name] ? 'error' : 'success';
+
+    const borderColor = D5FormErrorValue[this.name] ? 'rgb(219, 54, 67)' : '#00B2A1';
+    inputElement.style.border = `1px solid ${borderColor}`;
+    errorMessageElement.innerHTML = D5FormErrorValue[this.name] ?? ''
+  }
+}
+
+customElements.define('d5-new-input', D5NewInput)
 
 class D5SelectElement extends HTMLElement { 
   constructor() { 
@@ -377,7 +525,7 @@ class D5SelectElement extends HTMLElement {
           padding: 0;
         }
 
-        input:focus ~ .border{
+        input:focus ~ .border {
           border: 5px solid #dbe3fe;
         }
 
@@ -634,8 +782,8 @@ class D5LoginPage extends HTMLElement {
           </div>
           <div>
             <d5-input
-              type="password"
               id="password"
+              type="password"
               name="password"
               label="Password"
               maxLength="16"
@@ -671,7 +819,7 @@ class D5LoginPage extends HTMLElement {
       try {
         const response = await sendRequest("POST", `${baseUrl}/onboarding/login`, D5FormValue);
         setCookie('d5-onboarding-token', response.data.access)
-        d5Onboarding?.setRoute('content')
+        d5Onboarding?.setRoute('customer-details')
         messageValue = {
           value: 'Successfully Login',
           type: 'success'
@@ -924,8 +1072,8 @@ class D5Onboarding {
       case 'signUp':
         boardingPage.appendChild(document.createElement('d5-sign-up-page'))
         break
-      case 'content': 
-        console.log(1)
+      case 'customer-details': 
+        boardingPage.appendChild(document.createElement('d5-customer-datils-page'))
         break
       default:
         boardingPage.appendChild(document.createElement('d5-login-page'))
