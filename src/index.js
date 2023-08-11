@@ -281,7 +281,7 @@ class D5InputElement extends HTMLElement {
       </style>
 
       ${this.getAttribute('label') ?
-        `<label for=${this.getAttribute('id')}>${this.getAttribute('label')}</label>`
+        `<label for=${this.getAttribute('id')}>${this.getAttribute('label')}${this.getAttribute('required') ? ' *': ''} </label>`
         : '<div></div>'
       }
       <div class="input_wrapper">
@@ -371,10 +371,9 @@ class D5NewInput extends HTMLElement {
         }
 
         input {
-          width: 100%;
           position: relative;
           z-index: 4;
-          width: 100%;
+          width: calc(100% - 36px);
           border: 1px solid #d9d9d9;
           height: 30px;
           margin-top: 5px;
@@ -383,7 +382,18 @@ class D5NewInput extends HTMLElement {
           outline: none;
           font-size: 13px;
           padding: 2px 0;
+          padding-right: 36px;
           transition: all 0.6s;
+        }
+
+        
+        input:-webkit-autofill {
+          -webkit-box-shadow: 0 0 0px 1000px rgba(67,118,144,0.5) inset;
+        }
+
+        input:-webkit-autofill {
+          -webkit-box-shadow: 0 0 0px 1000px white inset;
+          -webkit-text-fill-color: #333;
         }
 
         label {
@@ -408,7 +418,7 @@ class D5NewInput extends HTMLElement {
 
         .input_wrapper img {
           position: absolute;
-          right: 12px;
+          right: 10px;
           top: 34px;
           cursor: pointer;
           width: 20px;
@@ -640,7 +650,7 @@ class D5SelectElement extends HTMLElement {
       </style>
 
       ${this.getAttribute('label') ?
-        `<label for=${this.getAttribute('id')}>${this.getAttribute('label')}</label>`
+        `<label for=${this.getAttribute('id')}>${this.getAttribute('label')}${this.getAttribute('required') ? ' *': ''} </label>`
         : '<div></div>'
       }
       <div class="dropdown">
@@ -1020,7 +1030,210 @@ class D5SignUpPage extends HTMLElement {
   }
 }
 
-customElements.define('d5-sign-up-page',D5SignUpPage)
+customElements.define('d5-sign-up-page', D5SignUpPage)
+
+class D5CustomerPage extends HTMLElement { 
+  constructor() { 
+    super()
+  }
+
+  connectedCallback() { 
+    this.render()
+  }
+
+  render() { 
+    const D5CustomerPageElement = document.createElement('template')
+    
+    D5CustomerPageElement.innerHTML = `
+      <style>
+        .flex {
+          display: flex;
+          justify-content: space-between
+        }
+
+        .left {
+          flex: 1;
+        }
+
+        .right {
+          min-width: 850px;
+        }
+
+        .small {
+          width: 23%;
+        }
+
+        .large {
+          width: 74.4%;
+        }
+      </style>
+
+      <div class="flex">
+        <div class="left">
+
+        </div>
+        <div class="right">
+          
+          <form>
+            <div class="flex">
+              <div class="small">
+                <d5-new-input
+                  type="text"
+                  id="first_name"
+                  label="First Name"
+                  name="first_name"
+                  required="Name is a required field."
+                />
+              </div>
+              <div class="small">
+                <d5-new-input
+                  type="text"
+                  id="last_name"
+                  label="Last Name"
+                  name="last_name"
+                  required="Name is a required field."
+                />
+              </div>
+              <div class="small">
+                <d5-new-input
+                  type="text"
+                  id="email"
+                  label="Email"
+                  name="email"
+                  required="Email is a required field."
+                  pattern="^\\S+@[a-zA-Z0-9._-]+\\.[a-zA-Z0-9._-]{2,}$"
+                  patternMessage="Please enter your email address."
+                />
+              </div>
+              <div class="small">
+                <d5-new-input
+                  type="text"
+                  id="company"
+                  label="Company"
+                  name="company"
+                  required="Company is a required field."
+                />
+              </div>
+            </div>
+            <div class="flex">
+              <div class="large">
+                <d5-new-input
+                  type="text"
+                  id="address1"
+                  label="Address (line 1)"
+                  name="address1"
+                />
+              </div>
+              <div class="small">
+                <d5-new-input
+                  type="text"
+                  id="phone"
+                  label="Phone"
+                  name="phone"
+                />
+              </div>
+            </div>
+            <div class="flex">
+              <div class="large">
+                <d5-new-input
+                  type="text"
+                  id="address2"
+                  label="Address (line 2)"
+                  name="address2"
+                />
+              </div>
+              <div class="small">
+                <d5-select
+                  options='[
+                    {"label": "选项1", "value": "option1"},
+                    {"label": "选项2", "value": "option2"}
+                  ]'
+                  type="text"
+                  id="revenue"
+                  label="Revenue"
+                  name="revenue"
+                  required="Revenue is a required filed;"
+                />
+              </div>
+            </div>
+            <div class="flex">
+              <div class="smalll">
+                <d5-new-input
+                  type="text"
+                  id="country"
+                  label="Country"
+                  name="country"
+                  disabled
+                  value="US"
+                />
+              </div>
+              <div class="small">
+                <d5-select
+                  options='[
+                    {"label": "选项1", "value": "option1"},
+                    {"label": "选项2", "value": "option2"}
+                  ]'
+                  type="text"
+                  id="state"
+                  label="State"
+                  name="state"
+                  required="Revenue is a required filed;"
+                />
+              </div>
+              <div class="small">
+                <d5-select
+                  options='[
+                    {"label": "选项1", "value": "option1"},
+                    {"label": "选项2", "value": "option2"}
+                  ]'
+                  type="text"
+                  id="revenue"
+                  label="City"
+                  name="city"
+                  required="Revenue is a required filed;"
+                />
+              </div>
+              <div class="smalll">
+                <d5-new-input
+                  type="text"
+                  id="zip"
+                  label="Zip"
+                  name="zip"
+                />
+              </div>
+            </div>
+            <div class="flex">
+              <div class="small">
+                <d5-new-input
+                  type="text"
+                  id="store_name"
+                  label="Store Name"
+                  name="store_name"
+                  required="Store name is a required filed;"
+                />
+              </div>
+              <div class="large">
+                <d5-new-input
+                  type="text"
+                  id="description"
+                  label="Description"
+                  name="description"
+                />
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    `
+
+    const cloneContent = D5CustomerPageElement.content.cloneNode(true)
+
+    const shadow = this.attachShadow({ mode: 'open' })
+    shadow.append(cloneContent)
+  }
+}
+
+customElements.define('d5-customer-details-page', D5CustomerPage)
 
 class D5Onboarding { 
   constructor(config) { 
@@ -1033,7 +1246,7 @@ class D5Onboarding {
 
   init() { 
     if (this.trigger === 'flat') {
-      this.setRoute('login')
+      this.setRoute('customer-details')
     } else { 
       const container = document.querySelector(this.container)
       container.addEventListener('click', () => { 
@@ -1073,7 +1286,7 @@ class D5Onboarding {
         boardingPage.appendChild(document.createElement('d5-sign-up-page'))
         break
       case 'customer-details': 
-        boardingPage.appendChild(document.createElement('d5-customer-datils-page'))
+        boardingPage.appendChild(document.createElement('d5-customer-details-page'))
         break
       default:
         boardingPage.appendChild(document.createElement('d5-login-page'))
