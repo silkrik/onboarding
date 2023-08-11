@@ -220,6 +220,8 @@ class D5InputElement extends HTMLElement {
       <style>
         input {
           width: 100%;
+          position: relative;
+          z-index: 4;
           border: 1px solid #d9d9d9;
           height: 30px;
           margin-top: 5px;
@@ -228,6 +230,26 @@ class D5InputElement extends HTMLElement {
           outline: none;
           font-size: 13px;
           padding: 0;
+        }
+
+        .border_error {
+          border: 5px solid #fedbde!important;
+        }
+
+        input:focus ~ .border{
+          border: 5px solid #dbe3fe;
+        }
+
+        .border {
+          position: absolute;
+          z-index: 3;
+          bottom: -5px;
+          left: -4px;
+          height: 32px;
+          width: 100%;
+          border: 5px solid white;
+          border-radius: 6px;
+          transition: all 0.6s;
         }
 
         .error_message {
@@ -263,6 +285,7 @@ class D5InputElement extends HTMLElement {
       }
       <div class="input_wrapper">
         <input type=${this.getAttribute('type')} id=${this.getAttribute('id')} />
+        <div class="border"></div>
         ${this.getAttribute('icon') ?
           '<img src="./assets/eye.svg" />'
           : '<div></div>'
@@ -302,8 +325,16 @@ class D5InputElement extends HTMLElement {
   updateStyle() {
     const shadow = this.shadowRoot;
     const inputElement = shadow.querySelector('input');
+    const borderElement = shadow.querySelector('.border');
     const borderColor = D5FormErrorValue[this.name] ? 'rgb(219, 54, 67)' : '#d9d9d9';
     inputElement.style.border = `1px solid ${borderColor}`;
+    borderElement.className = `border ${D5FormErrorValue[this.name] ? 'border_error' : ''}`
+    inputElement.addEventListener('focus', () => { 
+      borderElement.className = `border ${D5FormErrorValue[this.name] ? 'border_error' : ''}`
+    })
+    inputElement.addEventListener('blur', () => { 
+      borderElement.className = 'border'
+    })
 
     const errorMessageElement = shadow.querySelector('.error_message')
     errorMessageElement.innerHTML = D5FormErrorValue[this.name] ?? ''
@@ -315,6 +346,227 @@ class D5InputElement extends HTMLElement {
 }
 
 customElements.define('d5-input', D5InputElement)
+
+
+class D5SelectElement extends HTMLElement { 
+  constructor() { 
+    super()
+  }
+
+  connectedCallback() { 
+    this.render()
+  }
+
+  render() { 
+    const D5Select = document.createElement('template')
+
+    D5Select.innerHTML = `
+      <style>
+        input {
+          width: 100%;
+          position: relative;
+          z-index: 4;
+          width: 100%;
+          border: 1px solid #d9d9d9;
+          height: 30px;
+          margin-top: 5px;
+          border-radius: 4px;
+          text-indent: 6px; 
+          outline: none;
+          font-size: 13px;
+          padding: 0;
+        }
+
+        input:focus ~ .border{
+          border: 5px solid #dbe3fe;
+        }
+
+        .border {
+          position: absolute;
+          z-index: 3;
+          bottom: -5px;
+          left: -4px;
+          height: 32px;
+          width: 100%;
+          border: 5px solid white;
+          border-radius: 6px;
+          transition: all 0.6s;
+        }
+
+        .dropdown {
+          width: 100%;
+          position: relative;
+          display: inline-block;
+        }
+
+        .dropdown-content {
+          position: absolute;
+          z-index: 99;
+          display: none;
+          border-radius: 0.25rem;
+          box-shadow: rgba(49, 52, 64, 0.2) 0px 1px 6px;
+          background-color: rgb(255, 255, 255);
+          color: rgb(49, 52, 64);
+          margin-top: 5px;
+          max-height: 200px;
+          outline: none;
+          overflow-y: auto;
+          padding: 0.5rem 0px;
+        }
+
+        .dropdown-content div {
+          cursor: pointer;
+          padding: 0.25rem 1rem;
+          background-color: white;
+          transition: all 0.3s;
+          font-size: 13px;
+        }
+
+        .dropdown-content div:hover {
+          background-color: rgb(246, 247, 252)
+        }
+
+        .input_wrapper {
+          position: relative;
+        }
+
+        .input_wrapper img {
+          position: absolute;
+          right: 6px;
+          bottom: 4px;
+          z-index: 5;
+        }
+
+        .triangle_wrapper {
+          cursor: pointer;
+          position: absolute;
+          right: 6px;
+          bottom: 3px;
+          z-index: 5;
+          width: 24px;
+          height: 24px;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          border-radius: 4px;
+          transition: all 0.6s;
+        }
+
+        .triangle_wrapper:hover {
+          background-color: rgb(240, 243, 255);
+        }
+
+        .triangle {
+          width: 0;
+          height: 0;
+          border-left: 4px solid transparent;
+          border-right: 4px solid transparent;
+          border-top: 4px solid #5e637a;
+        }
+
+        .dropdown-content .option_wrapper {
+          position: relative;
+          padding-right: 32px;
+        }
+
+        .option_wrapper img {
+          position: absolute;
+          right: 6px;
+          top: 9px;
+          display: none;
+          width: 16px;
+          height: 16px;
+        }
+
+        p {
+          margin: 0;
+          line-height: 26px;
+        }
+
+        label {
+          cursor: pointer;
+          font-size: 12px;
+          font-weight: 600;
+          color: rgb(49, 52, 64);
+        }
+      </style>
+
+      ${this.getAttribute('label') ?
+        `<label for=${this.getAttribute('id')}>${this.getAttribute('label')}</label>`
+        : '<div></div>'
+      }
+      <div class="dropdown">
+        <div class="input_wrapper">
+          <input type="text" readonly="readonly">
+          <div class="border"></div>
+          <div class="triangle_wrapper">
+            <div class="triangle"></div>
+          </div>
+        </div>
+        <div id="dropdownContent" class="dropdown-content">
+        </div>
+      </div>
+    `
+
+    const cloneContent = D5Select.content.cloneNode(true)
+    const dropdownContent = cloneContent.getElementById("dropdownContent");
+    const dropdown = cloneContent.querySelectorAll(".dropdown")[0];
+    const input = cloneContent.querySelector('input')
+    const triangleWrappper = cloneContent.querySelector('.triangle_wrapper')
+    
+    const toggleDropdown = () => {
+      dropdownContent.style.display = (dropdownContent.style.display === "" || dropdownContent.style.display === "none") ? "block" : "none";
+      input.focus()
+    }
+
+    input.addEventListener('click', toggleDropdown)
+    triangleWrappper.addEventListener('click', toggleDropdown)
+
+    const shadowRoot = document.querySelector('#onboarding-page');
+    shadowRoot.addEventListener('click', function (event) {
+      const path = event.composedPath();
+      if (!path.includes(dropdown) && dropdownContent.style.display === "block") {
+        dropdownContent.style.display = "none";
+      }
+    });
+
+    const options = this.getAttribute('options');
+    if (options) {
+      const parsedOptions = JSON.parse(options);
+      parsedOptions.forEach(option => {
+        const optionElement = document.createElement('div');
+        const optionValue = document.createElement('p');
+        optionElement.className = 'option_wrapper'
+        optionValue.textContent = option.label
+        optionValue.setAttribute('value',option.value)
+        const img = document.createElement('img')
+        img.src = './assets/select.svg'
+        optionElement.appendChild(img)
+        optionElement.appendChild(optionValue)
+        dropdownContent.appendChild(optionElement);
+      });
+    }
+
+    const optionsWrapper = cloneContent.querySelectorAll('#dropdownContent .option_wrapper')
+    const optionValues = cloneContent.querySelectorAll('#dropdownContent .option_wrapper p')
+    const optionImages = cloneContent.querySelectorAll('#dropdownContent .option_wrapper img')
+    for (let index = 0; index < optionsWrapper.length; index++){
+      optionsWrapper[index].addEventListener('click', () => {
+        for (const optionImg of optionImages) { 
+          optionImg.style.display = 'none'
+        }
+        optionImages[index].style.display = 'block'
+        input.value = optionValues[index].innerHTML
+        dropdownContent.style.display = "none";
+      })
+    }
+
+    const shadow = this.attachShadow({mode: "open"})
+    shadow.append(cloneContent)
+  }
+}
+
+customElements.define('d5-select', D5SelectElement)
 
 class D5LoginPage extends HTMLElement { 
   constructor() { 
@@ -659,8 +911,10 @@ class D5Onboarding {
     }
 
     const container = document.querySelector(this.container);
+    container.style.height="100%"
     const boardingPage = document.createElement('div')
     boardingPage.id = 'onboarding-page'
+    boardingPage.style.height="100%"
     container.appendChild(boardingPage);
 
     switch (route) {
